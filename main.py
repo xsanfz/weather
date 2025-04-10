@@ -2,41 +2,29 @@ import requests
 
 
 def fetch_weather_data(city):
-    base_url = "https://wttr.in/{}"
+    try:
+        response = requests.get(
+            f"https://wttr.in/{city}",
+            params={'M': '', 'T': '', 'n': '', 'Q': '', 'lang': 'ru'},
+            timeout=5
+        )
+        response.raise_for_status()
+        return f"{city}: {response.text.strip()}"
 
-    params = {
-        'M': '',
-        'T': '',
-        'n': '',
-        'Q': '',
-        'lang': 'ru'
-    }
-
-    response = requests.get(base_url.format(city), params=params, timeout=5)
-    response.raise_for_status()
-    return response.text.strip()
-
-
-def format_weather_message(city, weather_data):
-    return f"{city}: {weather_data}"
-
-
-def process_city(city):
-    weather_data = fetch_weather_data(city)
-    return format_weather_message(city, weather_data)
+    except requests.exceptions.HTTPError:
+        return f"Ошибка: не удалось получить данные для {city} (HTTP ошибка)"
+    except requests.exceptions.ConnectionError:
+        return f"Ошибка соединения при запросе погоды для {city}"
+    except requests.exceptions.Timeout:
+        return f"Превышено время ожидания ответа для {city}"
+    except requests.exceptions.RequestException as e:
+        return f"Ошибка при запросе погоды для {city}: {str(e)}"
 
 
 def main():
     cities = ["Лондон", "Шереметьево", "Череповец"]
-
     for city in cities:
-        try:
-            message = process_city(city)
-            print(message)
-        except requests.exceptions.RequestException as e:
-            print(f"Ошибка при обработке города {city}: {e}")
-        except Exception as e:
-            print(f"Неизвестная ошибка для города {city}: {e}")
+        print(fetch_weather_data(city))
 
 
 if __name__ == "__main__":
